@@ -11,7 +11,7 @@ PDF especificações: http://www.heliotek.com.br/Downloads/Manuais/manual_aquece
 
 
  -- Novos --
- # Relé 8 canais: http://www.filipeflop.com/pd-6b851-modulo-rele-5v-8-canais.html
+ # Relé 8 canais: http://www.filipeflop.com/pd-6b851-modulo-rele-5v-8-canais.html\n
 Relé 4 canais: http://www.filipeflop.com/pd-c0ce5-modulo-rele-5v-4-canais.html?ct=41d96&p=1&s=1
 Sensor temperatura água: http://www.filipeflop.com/pd-1e7d0e-sensor-de-temperatura-ds18b20-a-prova-d-agua.html
 Relé de estado solido 25A: http://www.filipeflop.com/pd-207eb1-rele-de-estado-solido-ssr-25-da.html?ct=&p=1&s=1
