@@ -13,11 +13,11 @@ PDF especificações: http://www.heliotek.com.br/Downloads/Manuais/manual_aquece
 
 
 ### Novos --
-- Relé 4 canais: http://www.filipeflop.com/pd-c0ce5-modulo-rele-5v-4-canais.html?ct=41d96&p=1&s=1
+Kit Jumpers: http://www.filipeflop.com/pd-6b637-kit-jumpers-macho-macho-x65-unidades.html
+Relé 4 canais: http://www.filipeflop.com/pd-c0ce5-modulo-rele-5v-4-canais.html?ct=41d96&p=1&s=1
 - Sensor temperatura água: http://www.filipeflop.com/pd-1e7d0e-sensor-de-temperatura-ds18b20-a-prova-d-agua.html
 - Relé de estado solido 25A: http://www.filipeflop.com/pd-207eb1-rele-de-estado-solido-ssr-25-da.html?ct=&p=1&s=1
 - Display Nokia 5110: http://www.filipeflop.com/pd-137999-display-lcd-nokia-5110.html?ct=41d86&p=1&s=4
-- [OLD] Relé 8 canais: http://www.filipeflop.com/pd-6b851-modulo-rele-5v-8-canais.html
 
 ### Atuais -- 
 - Pressure Switch do gás - HK02ZB028A: https://aerobasegroup.com/part-number/HK02ZB028A_01-478-4620 .
