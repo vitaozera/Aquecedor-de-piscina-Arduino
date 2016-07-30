@@ -4,7 +4,8 @@
 boolean NA = HIGH;
 boolean NF = LOW;
 unsigned long filteringCycleStartTime = 0;
-unsigned long filteringCycleStopTime = 21600; // 6 hours
+unsigned long filteringCycleStopTime = 21600000; // 6 hours
+unsigned long millisInADay = 86400000; // 24 hours
 int Contrast=15;
 int Brightnss = 64;
 
@@ -56,11 +57,14 @@ void setup() {
 }
 
 void loop() {
-  // Time since start
-  time = millis();
+  // Time since start. Resets back to 0 every 24 hours.
+  time = (millis() % millisInADay);
   
   // Check Button Clicks
   checkButtonClicks();
+  
+  // Check if its filtering time
+  poolFiltrationTime();
 }
 
 void checkButtonClicks() {
@@ -144,4 +148,18 @@ double checkWaterTemperature() {
 // Checks water flux
 int waterFlux() {
   
+}
+
+// Check if its filtering time
+void poolFiltrationTime() {
+  // DEBUG - se certificar aqui nessa parte de que nao roda
+  //         quando outras funcionalidades, como aquecimento, estao ligadas.
+  
+  // Keeps water bomb ON during filtering time
+  if(time < filteringCycleStopTime) {
+    switchWaterBomb(NA);
+  }
+  else {
+    switchWaterBomb(NF);
+  }
 }
