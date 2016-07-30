@@ -9,7 +9,7 @@ int Contrast=15;
 int Brightnss = 64;
 
 // PINS
-int pin_relay0 = 13; // motor - velocity 0
+int pin_relay0 = 7; // motor - velocity 0
 int pin_relay1 = 1; // motor - velocity 1
 int pin_relay2 = 2; // motor - velocity 2
 int pin_relay3 = 3; // compressor
@@ -41,7 +41,7 @@ void setup() {
   pinMode(pin_relay3, OUTPUT);
   pinMode(pin_relay4, OUTPUT);
   pinMode(pin_lcd_brightness, OUTPUT);
-  pinMode(pin_button_set, INPUT);
+  pinMode(pin_button_set, INPUT_PULLUP);
 
   // Setup LCD
   lcd.begin(16, 2);
@@ -50,28 +50,54 @@ void setup() {
   
   // Update LCD
   updateLCD();
+  
+  //switchMotor(0, NA);
+  
 }
 
 void loop() {
   // Time since start
   time = millis();
   
+  // Check Button Clicks
+  checkButtonClicks();
+}
 
-  // Update LCD
-  //updateLCD();
+void checkButtonClicks() {
+  int timePressed = 0;
+  
+  // While set button pressed
+  while(digitalRead(pin_button_set) == LOW) {
+    delay(100);
+    timePressed += 100;
+  }
+  if(timePressed >= 100)
+    // DEBUG - IMPLEMENT ACTION
+    
+  // While up button pressed
+  while(digitalRead(pin_button_up) == LOW) {
+    delay(100);
+    timePressed += 100;
+  }
+  if(timePressed >= 100)
+  // DEBUG - IMPLEMENT ACTION
+  
+    // While down button pressed
+  while(digitalRead(pin_button_down) == LOW) {
+    delay(100);
+    timePressed += 100;
+  }
+  if(timePressed >= 100)
+  // DEBUG - IMPLEMENT ACTION
 }
 
 void updateLCD() {
-  delay(1000);
-  lcd.clear();
-  delay(1000);
   lcd.setCursor(2, 0);
   lcd.print("Temp. Atual");
   lcd.setCursor(6, 1);
   lcd.print("27");
   lcd.print((char)223);
   lcd.print("C");
-  delay(1000);
 }
 
 // Switches motors to NA or to NF

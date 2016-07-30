@@ -7,3 +7,12 @@ Seguir o tutorial do:
 No tutorial ele não liga a luz de fundo controlada pelo pin 9.
 pra ligar a luz de fundo:
 	analogWrite(9, 64);  
+
+- Funcionalidades:
+	Aquecer até certa temperatura. 
+	Filtragem automatica
+	Ciclo degelo ??
+	Desligar tudo em caso de merda acontecer
+	
+	
+	
