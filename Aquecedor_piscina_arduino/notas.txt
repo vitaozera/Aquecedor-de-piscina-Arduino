@@ -10,7 +10,6 @@ pra ligar a luz de fundo:
 
 - Funcionalidades:
 	Aquecer até certa temperatura. 
-	Filtragem automatica
 	Ciclo degelo ??
 	Desligar tudo em caso de merda acontecer
 	

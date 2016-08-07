@@ -1,0 +1,10 @@
+void updateLCD();
+void checkButtonClicks();
+void poolFiltrationTime();
+void switchMotor(int velocity, bool state);
+void switchCompressor(bool state);
+void switchWaterBomb(bool state);
+double checkWaterTemperature();
+int waterFlux();
+void heatingSystem();
+void doActionState(int currentActionState);

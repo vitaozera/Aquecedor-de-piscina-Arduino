@@ -1,13 +1,18 @@
- #include <LiquidCrystal.h>
+#include <Arduino.h>
+#include <LiquidCrystal.h>
+#include "main_board.h"
 
 // CONSTANTS
-boolean NA = HIGH;
-boolean NF = LOW;
-unsigned long filteringCycleStartTime = 0;
-unsigned long filteringCycleStopTime = 21600000; // 6 hours
-unsigned long millisInADay = 86400000; // 24 hours
-int Contrast=15;
-int Brightnss = 64;
+const bool NA = HIGH;
+const bool NF = LOW;
+const unsigned long filteringCycleStartTime = 0;
+const unsigned long filteringCycleStopTime = 21600000; // 6 hours
+const unsigned long millisInADay = 86400000; // 24 hours
+const int Contrast=15;
+const int Brightnss = 64;
+const int actionState_standby = 0;
+const int actionState_filtration= 1;
+const int actionState_heating = 2;
 
 // PINS
 int pin_relay0 = 7; // motor - velocity 0
@@ -30,15 +35,17 @@ int pin_button_down = A2; // Down button
 // LCD
 LiquidCrystal lcd(pin_lcd_RS, pin_lcd_enable, pin_lcd_data3,
                   pin_lcd_data2, pin_lcd_data1, pin_lcd_data0);
-                  
+
 // GLOBAL VARIABLES
 unsigned long time;
+float water_temperature;
+int currentActionState = 0;
 
 void setup() {
   // Setup pins
   pinMode(pin_relay0, OUTPUT);
   pinMode(pin_relay1, OUTPUT);
-  pinMode(pin_relay2, OUTPUT); 
+  pinMode(pin_relay2, OUTPUT);
   pinMode(pin_relay3, OUTPUT);
   pinMode(pin_relay4, OUTPUT);
   pinMode(pin_lcd_brightness, OUTPUT);
@@ -47,51 +54,70 @@ void setup() {
   // Setup LCD
   lcd.begin(16, 2);
   analogWrite(pin_lcd_contrast,Contrast);
-  analogWrite(pin_lcd_brightness, Brightnss);  
-  
+  analogWrite(pin_lcd_brightness, Brightnss);
+
   // Update LCD
   updateLCD();
-  
+
+  // Defining default states
+  currentActionState = actionState_standby;
+
   //switchMotor(0, NA);
-  
+
 }
 
 void loop() {
   // Time since start. Resets back to 0 every 24 hours.
   time = (millis() % millisInADay);
-  
+
   // Check Button Clicks
   checkButtonClicks();
-  
-  // Check if its filtering time
-  poolFiltrationTime();
+
+  // Do current action state
+  doActionState(currentActionState);
+}
+
+void doActionState(int currentActionState) {
+  switch(currentActionState) {
+    case actionState_standby:
+      break;
+    case actionState_filtration:
+      poolFiltrationTime();
+      break;
+    case actionState_heating:
+      heatingSystem();
+      break;
+  }
+}
+void heatingSystem() {
+
 }
 
 void checkButtonClicks() {
   int timePressed = 0;
-  
+
   // While set button pressed
   while(digitalRead(pin_button_set) == LOW) {
     delay(100);
     timePressed += 100;
   }
-  if(timePressed >= 100)
+  //if(timePressed >= 100)
     // DEBUG - IMPLEMENT ACTION
-    
+
   // While up button pressed
   while(digitalRead(pin_button_up) == LOW) {
     delay(100);
     timePressed += 100;
   }
-  if(timePressed >= 100)
+  //if(timePressed >= 100)
   // DEBUG - IMPLEMENT ACTION
-  
+
     // While down button pressed
   while(digitalRead(pin_button_down) == LOW) {
     delay(100);
     timePressed += 100;
   }
-  if(timePressed >= 100)
+  //if(timePressed >= 100)
   // DEBUG - IMPLEMENT ACTION
 }
 
@@ -107,7 +133,7 @@ void updateLCD() {
 // Switches motors to NA or to NF
 // If state = NF, all motors will go OFF.
 // If state = NA, only ONE motor will go ON at a time
-void switchMotor(int velocity, boolean state) {
+void switchMotor(int velocity, bool state) {
   switch(velocity) {
     case 0:
       // Sets all other relays to NF
@@ -131,30 +157,24 @@ void switchMotor(int velocity, boolean state) {
 }
 
 // Switches compressor to NA or to NF
-void switchCompressor(boolean state) {
+void switchCompressor(bool state) {
     digitalWrite(pin_relay3, state);
 }
 
 // Switches water bomb to NA or to NF
-void switchWaterBomb(boolean state) {
+void switchWaterBomb(bool state) {
     digitalWrite(pin_relay4, state);
 }
 
-// Checks water temperature
-double checkWaterTemperature() {
-
-}
-
-// Checks water flux
-int waterFlux() {
-  
+void updateWaterTemperature() {
+  //water_temperature = ......;
 }
 
 // Check if its filtering time
 void poolFiltrationTime() {
   // DEBUG - se certificar aqui nessa parte de que nao roda
   //         quando outras funcionalidades, como aquecimento, estao ligadas.
-  
+
   // Keeps water bomb ON during filtering time
   if(time < filteringCycleStopTime) {
     switchWaterBomb(NA);
