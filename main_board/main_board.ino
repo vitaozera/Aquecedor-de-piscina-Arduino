@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <LiquidCrystal.h>
-#include "main_board.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 // CONSTANTS
 const bool NA = HIGH;
@@ -13,13 +14,14 @@ const int Brightnss = 64;
 const int actionState_standby = 0;
 const int actionState_filtration= 1;
 const int actionState_heating = 2;
+const unsigned long defaultCheckTemperatureInterval = 10000;
 
 // PINS
-int pin_relay0 = 7; // motor - velocity 0
-int pin_relay1 = 1; // motor - velocity 1
-int pin_relay2 = 2; // motor - velocity 2
-int pin_relay3 = 3; // compressor
-int pin_relay4 = 4; // water bomb
+int pin_relay0 = A3; // motor - velocity 0
+int pin_relay1 = A4; // motor - velocity 1
+int pin_relay2 = A5; // motor - velocity 2
+int pin_relay3 = 8; // compressor
+int pin_relay4 = 7; // water bomb
 int pin_lcd_data0 = 2; // data_0
 int pin_lcd_data1 = 3; // data_1
 int pin_lcd_data2 = 4; // data_2
@@ -31,15 +33,22 @@ int pin_lcd_brightness = 9; // LCD brightness
 int pin_button_set = A0; // Set button
 int pin_button_up = A1; // Up button
 int pin_button_down = A2; // Down button
+int pin_termometer = 10; // Temperature Sensor
 
 // LCD
 LiquidCrystal lcd(pin_lcd_RS, pin_lcd_enable, pin_lcd_data3,
                   pin_lcd_data2, pin_lcd_data1, pin_lcd_data0);
 
+// Temperature sensor
+OneWire oneWire(pin_termometer);
+DallasTemperature sensors(&oneWire);
+DeviceAddress sensor1;
+
 // GLOBAL VARIABLES
-unsigned long time;
-float water_temperature;
-int currentActionState = 0;
+unsigned long time = 0;
+unsigned long lastTimeCheckedTemperature = 0;
+float water_temperature = 0.0;
+int currentActionState = actionState_standby;
 
 void setup() {
   // Setup pins
@@ -56,41 +65,72 @@ void setup() {
   analogWrite(pin_lcd_contrast,Contrast);
   analogWrite(pin_lcd_brightness, Brightnss);
 
-  // Update LCD
-  updateLCD();
+  // Setup sensors
+  sensors.begin();
+  sensors.getAddress(sensor1, 0);  
 
   // Defining default states
   currentActionState = actionState_standby;
-
-  //switchMotor(0, NA);
-
 }
 
 void loop() {
   // Time since start. Resets back to 0 every 24 hours.
   time = (millis() % millisInADay);
+  
+  // Update water temperature
+  updateWaterTemperature();
 
   // Check Button Clicks
   checkButtonClicks();
-
+  
+  // Selects currentActionState
+  actionStateSelector();
+  
   // Do current action state
   doActionState(currentActionState);
+    
+  // Update LCD
+  updateLCD();
+}
+
+void actionStateSelector() {
+  // Check is its filtration time
+  if(poolFiltrationTime())
+    currentActionState = actionState_filtration;
+  
+  // Check if filtration is forced to be on by user configuration. (fountaion, for example) - IMPLEMENT
+  
+  // Check if heating is on - IMPLEMENT
+  
 }
 
 void doActionState(int currentActionState) {
   switch(currentActionState) {
     case actionState_standby:
+      // Turn off motor
+      switchMotor(0, NF);
+      // Turn off compressor
+      switchCompressor(NF);
+      // Turn of Water Bomb
+      switchWaterBomb(NF);
       break;
     case actionState_filtration:
-      poolFiltrationTime();
+      // Turn on Water Bomb
+      switchWaterBomb(NA);
+      // Turn off motor
+      switchMotor(0, NF);
+      // Turn off compressor
+      switchCompressor(NF);
       break;
     case actionState_heating:
-      heatingSystem();
+      // Turn on Water Bomb
+      switchWaterBomb(NA);
+      // Turn on motor
+      switchMotor(0, NA);
+      // Turn on compressor
+      switchCompressor(NA);
       break;
   }
-}
-void heatingSystem() {
-
 }
 
 void checkButtonClicks() {
@@ -122,12 +162,13 @@ void checkButtonClicks() {
 }
 
 void updateLCD() {
-  lcd.setCursor(2, 0);
-  lcd.print("Temp. Atual");
-  lcd.setCursor(6, 1);
-  lcd.print("27");
+  lcd.clear();
+  lcd.setCursor(4, 0);
+  lcd.print(water_temperature, 2);
   lcd.print((char)223);
   lcd.print("C");
+  lcd.setCursor(4, 1);
+  lcd.print("Standby");
 }
 
 // Switches motors to NA or to NF
@@ -166,20 +207,21 @@ void switchWaterBomb(bool state) {
     digitalWrite(pin_relay4, state);
 }
 
+// Updates water temperature reading from sensor
 void updateWaterTemperature() {
-  //water_temperature = ......;
+  if( (time - lastTimeCheckedTemperature) > defaultCheckTemperatureInterval )  {
+    sensors.requestTemperatures();
+    water_temperature = sensors.getTempC(sensor1);
+    lastTimeCheckedTemperature = time;
+  }
 }
 
 // Check if its filtering time
-void poolFiltrationTime() {
-  // DEBUG - se certificar aqui nessa parte de que nao roda
-  //         quando outras funcionalidades, como aquecimento, estao ligadas.
-
-  // Keeps water bomb ON during filtering time
-  if(time < filteringCycleStopTime) {
-    switchWaterBomb(NA);
-  }
-  else {
-    switchWaterBomb(NF);
-  }
+boolean poolFiltrationTime() {
+  if(time < filteringCycleStopTime)
+    return true;
+  else
+    return false; 
 }
+
+
