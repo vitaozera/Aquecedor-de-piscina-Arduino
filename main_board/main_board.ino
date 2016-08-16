@@ -17,9 +17,11 @@ const int actionState_filtration= 1;
 const int actionState_heating = 2;
 const int menuState_main = 0;
 const int menuState_heating = 1;
-const int menuState_filtering = 2;
+const int menuState_setHeating = 2;
+const int menuState_setFiltering = 3;
 const unsigned long defaultCheckTemperatureInterval = 30000;
 const unsigned long defaultUpdateLCDInterval = 500;
+const unsigned long LCDDimTime = 15000;
 const int buttonsAmount = 3;
 const int button_set = 0;
 const int button_down = 1;
@@ -69,10 +71,13 @@ int currentActionState = actionState_standby;
 int currentMenuState = menuState_main;
 int lastButtonPressed = -1;
 boolean buttonPressed = false;
+unsigned long lastButtonPressTime = 0;
 boolean forcedFiltering = false; // Forced filtering - ON or OFF
 boolean autoFiltering = false; // Auto filtering - ON or OFF
-boolean heating = false; // Heating System - ON or OFF
+boolean heating = false; // Heating System - ON or OFF - Calculated by program
+boolean setHeating = false; // Heating - On or OFF - User input
 float heatingTemperature = 20;
+boolean LCDBacklightIsOn = false;
 
 void setup() {
   // Setup pins
@@ -86,7 +91,6 @@ void setup() {
   // Setup LCD
   lcd.begin(16, 2);
   analogWrite(pin_lcd_contrast,Contrast);
-  analogWrite(pin_lcd_brightness, Brightnss);
 
   // Setup sensors
   sensors.begin();
@@ -132,14 +136,43 @@ void loop() {
 
 // Checks whether heating should be turned on or off
 void checkHeating() {
-  // DEBUG - Implement better version. Based on conditionals decide
- // whether heating should be on or off. Read notes.txt.
-  if(water_temperature < heatingTemperature) {
-    heating = true;
+  
+  if(!setHeating) {
+    heating = false; 
+    return;
+  }
+  
+  if(heating) {
+    if(water_temperature > heatingTemperature + 0.5) {
+      heating = false;
+    }
+    else {
+      heating = true;
+    }
+  }
+  else {
+    if(water_temperature < heatingTemperature - 0.5) {
+      heating = true;
+    }
+    else {
+      heating = false;
+    }
+  }  
+  /*
+  if(setHeating && (water_temperature < heatingTemperature + 0.5)) {
+    if(heating && (water_temperature > heatingTemperature - 0.5)) {
+      heating = true;
+    }
+    else {
+      heating = false;
+
+  }
+  else if(setHeating && (water_temperature < heatingTemperature) {
+    
   }
   else {
     heating = false;
-  }
+  } */
 }
 
 // Does button click action
@@ -157,9 +190,12 @@ void  doButtonClickAction() {
           currentMenuState = menuState_heating;
         break;
         case menuState_heating:
-          currentMenuState = menuState_filtering;
+          currentMenuState = menuState_setHeating;
         break;
-        case menuState_filtering:
+        case menuState_setHeating:
+          currentMenuState = menuState_setFiltering;
+        break;
+        case menuState_setFiltering:
           currentMenuState = menuState_main;
         break;
       }
@@ -170,10 +206,13 @@ void  doButtonClickAction() {
           // do nothing
         break;
         case menuState_heating:
-          heatingTemperature += 1.0;
+          changeHeatingTemperature(0.5);
         break;
-        case menuState_filtering:
+        case menuState_setFiltering:
           forcedFiltering = !forcedFiltering;
+        break;
+        case menuState_setHeating:
+          setHeating = !setHeating;
         break;
       }
     break;
@@ -183,10 +222,13 @@ void  doButtonClickAction() {
           // do nothing
         break;
         case menuState_heating:
-          heatingTemperature -= 1.0;
+          changeHeatingTemperature(-0.5);
         break;
-        case menuState_filtering:
+        case menuState_setFiltering:
           forcedFiltering = !forcedFiltering;
+        break;
+        case menuState_setHeating:
+          setHeating = !setHeating;
         break;
       }
     break;
@@ -249,6 +291,10 @@ void checkButtonClicks() {
     
     // Mark pressed button and leave function
     if(button[i].clicks == 1) {
+      lastButtonPressTime = time;
+      if(!LCDBacklightIsOn){
+        return;
+      }
       switch(i) {
         case button_set:
           buttonPressed = true;
@@ -273,9 +319,17 @@ void checkButtonClicks() {
 // Updates LCD data
 void updateLCD() {
   if( (time - lastTimeUpdatedLCD) > defaultUpdateLCDInterval ) {
-    lastTimeUpdatedLCD = time;
-    lcd.clear();
     
+    /* Dim display when not in use */
+    if( (time - lastButtonPressTime) > LCDDimTime ) {
+     analogWrite(pin_lcd_brightness, 0);
+     LCDBacklightIsOn = false;
+    }
+    else {
+     analogWrite(pin_lcd_brightness, Brightnss);
+     LCDBacklightIsOn = true;
+    }
+    lcd.clear();
     switch(currentMenuState) {
       case menuState_main:
         lcd.setCursor(4, 0);
@@ -307,7 +361,7 @@ void updateLCD() {
         lcd.print((char)223);
         lcd.print("C");
        break;
-       case menuState_filtering:
+       case menuState_setFiltering:
         lcd.setCursor(0, 0);
         lcd.print("Forcar filtragem");
         if(forcedFiltering){
@@ -319,7 +373,20 @@ void updateLCD() {
           lcd.print("Desligado");
         }
        break;
+       case menuState_setHeating:
+        lcd.setCursor(3, 0);
+        lcd.print("Aquecimento");
+        if(setHeating){
+          lcd.setCursor(5, 1);
+          lcd.print("Ligado");
+        }
+        else{
+          lcd.setCursor(3, 1);
+          lcd.print("Desligado");
+        }
+       break;
     }
+  lastTimeUpdatedLCD = time;
   }
 }
 
@@ -374,6 +441,22 @@ void checkAutoFiltering() {
     autoFiltering = true;
   else
     autoFiltering = false;
+}
+
+// Change heating temperature
+void changeHeatingTemperature(float k) {
+ float auxTemperature = heatingTemperature + k;
+ 
+ if(auxTemperature > 35.0) {
+   heatingTemperature = 35;
+   
+ }
+ else if(auxTemperature < 10.0) {
+   heatingTemperature = 10;
+ }
+ else {
+   heatingTemperature = auxTemperature;
+ }
 }
 
 
