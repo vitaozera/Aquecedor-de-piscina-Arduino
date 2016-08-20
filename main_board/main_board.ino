@@ -9,9 +9,8 @@
 // CONSTANTS
 const bool NA = HIGH;
 const bool NF = LOW;
-const unsigned long filteringCycleStartTime = 0;
-const unsigned long filteringCycleStopTime = 21600000; // 6 hours
 const unsigned long millisInADay = 86400000; // 24 hours
+const unsigned long millisInAnHour = 3600000; // 1 hour
 const int Contrast=15;
 const int Brightnss = 48;
 const int actionState_standby = 0;
@@ -21,6 +20,7 @@ const int menuState_main = 0;
 const int menuState_heating = 1;
 const int menuState_setHeating = 2;
 const int menuState_setFiltering = 3;
+const int menuState_autoFiltering = 4;
 const unsigned long defaultCheckTemperatureInterval = 30000;
 const unsigned long defaultUpdateLCDInterval = 500;
 const unsigned long LCDDimTime = 15000;
@@ -71,6 +71,9 @@ unsigned long lastTimeUpdatedLCD = 0;
 float water_temperature = 0.0;
 int currentActionState = actionState_standby;
 int currentMenuState = menuState_main;
+unsigned long filteringCycleStartTime = 0;
+unsigned long filteringCycleStopTime = 21600000; // 6 hours
+int filteringCycleDuration = 6; // Filtering cycle duration in hours
 int lastButtonPressed = -1;
 boolean buttonPressed = false;
 unsigned long lastButtonPressTime = 0;
@@ -97,7 +100,7 @@ void setup() {
   // Setup sensors
   sensors.begin();
   sensors.getAddress(sensor1, 0);
-  
+
   // Setup ClickButtons
   for (int i=0; i < buttonsAmount; i++)
   {
@@ -110,40 +113,40 @@ void setup() {
 void loop() {
   // Time since start. Resets back to 0 every 24 hours.
   time = (millis() % millisInADay);
-  
+
   // Update water temperature
   updateWaterTemperature();
-  
+
   // Check whether auto filtering should be turned on or off
   checkAutoFiltering();
-  
+
   // Check whether heating should be turned on or off
   checkHeating();
-  
+
   // Check Button Clicks
   checkButtonClicks();
-  
+
   // Perform button click action
   doButtonClickAction();
-  
+
   // Selects currentActionState
   actionStateSelector();
-  
+
   // Do current action state
   doCurrentActionState();
-    
+
   // Update LCD
   updateLCD();
 }
 
 // Checks whether heating should be turned on or off
 void checkHeating() {
-  
+
   if(!setHeating) {
-    heating = false; 
+    heating = false;
     return;
   }
-  
+
   if(heating) {
     if(water_temperature > heatingTemperature + 0.5) {
       heating = false;
@@ -159,7 +162,7 @@ void checkHeating() {
     else {
       heating = false;
     }
-  }  
+  }
   /*
   if(setHeating && (water_temperature < heatingTemperature + 0.5)) {
     if(heating && (water_temperature > heatingTemperature - 0.5)) {
@@ -170,7 +173,7 @@ void checkHeating() {
 
   }
   else if(setHeating && (water_temperature < heatingTemperature) {
-    
+
   }
   else {
     heating = false;
@@ -181,9 +184,9 @@ void checkHeating() {
 void  doButtonClickAction() {
  if(!buttonPressed)
    return;
-  
+
   buttonPressed = false;
-  
+
   // Select click action
   switch(lastButtonPressed) {
     case button_set:
@@ -198,6 +201,9 @@ void  doButtonClickAction() {
           currentMenuState = menuState_setFiltering;
         break;
         case menuState_setFiltering:
+          currentMenuState = menuState_autoFiltering;
+        break;
+        case menuState_autoFiltering:
           currentMenuState = menuState_main;
         break;
       }
@@ -209,6 +215,9 @@ void  doButtonClickAction() {
         break;
         case menuState_heating:
           changeHeatingTemperature(0.5);
+        break;
+        case menuState_autoFiltering:
+          changeFilteringCycleDuarion(1);
         break;
         case menuState_setFiltering:
           forcedFiltering = !forcedFiltering;
@@ -226,6 +235,9 @@ void  doButtonClickAction() {
         case menuState_heating:
           changeHeatingTemperature(-0.5);
         break;
+        case menuState_autoFiltering:
+          changeFilteringCycleDuarion(-1);
+        break;
         case menuState_setFiltering:
           forcedFiltering = !forcedFiltering;
         break;
@@ -234,7 +246,7 @@ void  doButtonClickAction() {
         break;
       }
     break;
-  } 
+  }
 }
 
 // Selects action state
@@ -243,11 +255,11 @@ void actionStateSelector() {
   // Check if its auto filtration time
   if(autoFiltering)
     currentActionState = actionState_filtration;
-  
+
   // Check if filtration is forced
   if(forcedFiltering == true)
     currentActionState = actionState_filtration;
-  
+
   // Check if heating is on
   if(heating)
     currentActionState = actionState_heating;
@@ -290,7 +302,7 @@ void checkButtonClicks() {
   {
     // Update state of all buittons
     button[i].Update();
-    
+
     // Mark pressed button and leave function
     if(button[i].clicks == 1) {
       lastButtonPressTime = time;
@@ -321,7 +333,7 @@ void checkButtonClicks() {
 // Updates LCD data
 void updateLCD() {
   if( (time - lastTimeUpdatedLCD) > defaultUpdateLCDInterval ) {
-    
+
     /* Dim display when not in use */
     if( (time - lastButtonPressTime) > LCDDimTime ) {
      analogWrite(pin_lcd_brightness, 0);
@@ -369,6 +381,19 @@ void updateLCD() {
         if(forcedFiltering){
           lcd.setCursor(5, 1);
           lcd.print("Ligado");
+        }
+        else{
+          lcd.setCursor(3, 1);
+          lcd.print("Desligado");
+        }
+       break;
+       case menuState_autoFiltering:
+        lcd.setCursor(0, 0);
+        lcd.print("Auto filtragem");
+        if(filteringCycleDuration){
+          lcd.setCursor(1, 1);
+          lcd.print(filteringCycleDuration, 2);
+          lcd.print(" H/dia")
         }
         else{
           lcd.setCursor(3, 1);
@@ -439,7 +464,7 @@ void updateWaterTemperature() {
 
 // Check if its filtering time
 void checkAutoFiltering() {
-  if(time < filteringCycleStopTime)
+  if(filteringCycleStartTime < time && time < filteringCycleStopTime)
     autoFiltering = true;
   else
     autoFiltering = false;
@@ -448,10 +473,10 @@ void checkAutoFiltering() {
 // Change heating temperature
 void changeHeatingTemperature(float k) {
  float auxTemperature = heatingTemperature + k;
- 
+
  if(auxTemperature > 35.0) {
    heatingTemperature = 35;
-   
+
  }
  else if(auxTemperature < 10.0) {
    heatingTemperature = 10;
@@ -461,4 +486,20 @@ void changeHeatingTemperature(float k) {
  }
 }
 
+// Change filtering cycle duration
+void changeFilteringCycleDuarion(int k) {
+ int auxDuration = filteringCycleDuration + k;
 
+ if(auxDuration > 24) {
+   filteringCycleDuration = 24;
+
+ }
+ else if(auxTemperature < 0) {
+   filteringCycleDuration = 0;
+ }
+ else {
+   filteringCycleDuration = auxDuration;
+   filteringCycleStartTime = time
+   filteringCycleStopTime = filteringCycleStartTime + filteringCycleDuration*millisInAnHour;
+ }
+}
