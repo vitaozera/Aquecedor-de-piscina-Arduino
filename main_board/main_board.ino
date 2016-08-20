@@ -1,3 +1,5 @@
+#include <EEPROMVar.h>
+#include <EEPROMex.h>
 #include <Arduino.h>
 #include <LiquidCrystal.h>
 #include <OneWire.h>
@@ -72,8 +74,8 @@ int currentMenuState = menuState_main;
 int lastButtonPressed = -1;
 boolean buttonPressed = false;
 unsigned long lastButtonPressTime = 0;
-boolean forcedFiltering = false; // Forced filtering - ON or OFF
-boolean autoFiltering = false; // Auto filtering - ON or OFF
+boolean forcedFiltering = false; // Forced filtering - ON or OFF - User input
+boolean autoFiltering = false; // Auto filtering - ON or OFF - Calculated by program
 boolean heating = false; // Heating System - ON or OFF - Calculated by program
 boolean setHeating = false; // Heating - On or OFF - User input
 float heatingTemperature = 20;
