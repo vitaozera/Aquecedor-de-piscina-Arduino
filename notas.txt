@@ -3,6 +3,12 @@
 - Ver se o time e o millis() podem ser usados da forma como são usados. Tudo da certo quando o millis reseta para 0 ?? 
 
 - Ver como usar a memoria persistente EEPROM pra gravar o estado do arduino pra manter os dados mesmo depois de reiniciar o arduino.
+Usar o ->>>>> https://github.com/thijse/Arduino-EEPROMEx
+Variaveis que sao armazenadas: 
+heatingTemperature
+setHeating
+forcedFiltering
+
 
 # COMO INSTALAR O LCD DISPLAY
 Seguir o tutorial do:
