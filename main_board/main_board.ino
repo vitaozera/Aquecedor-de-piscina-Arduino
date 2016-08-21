@@ -5,6 +5,8 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <ClickButton.h>
+#include <string.h>
+#include <stdlib.h>
 
 // CONSTANTS
 const bool NA = HIGH;
@@ -84,6 +86,8 @@ boolean setHeating = false; // Heating - On or OFF - User input
 float heatingTemperature = 20;
 boolean LCDBacklightIsOn = false;
 
+char LCDCurrentMessage[2][17];
+
 void setup() {
   // Setup pins
   pinMode(pin_relay0, OUTPUT);
@@ -108,6 +112,7 @@ void setup() {
     button[i].multiclickTime = 250;  // Time limit for multi clicks
     button[i].longClickTime  = 1000; // Time until long clicks register
   }
+
 }
 
 void loop() {
@@ -330,8 +335,30 @@ void checkButtonClicks() {
   }
 }
 
+void LCDShow(char newMessage[2][17], int startPointLine0, int startPointLine1){
+  boolean changed = false;
+  if(strcmp(LCDCurrentMessage[0], newMessage[0]) || strcmp(LCDCurrentMessage[1], newMessage[1]))
+    changed = true;
+
+  if(changed){
+    strcpy(LCDCurrentMessage[0], newMessage[0]);
+    strcpy(LCDCurrentMessage[1], newMessage[1]);
+    lcd.clear();
+    lcd.setCursor(startPointLine0,0);
+    lcd.print(newMessage[0]);
+    lcd.setCursor(startPointLine1,1);
+    lcd.print(newMessage[1]);
+    delay(100);
+  }
+
+}
+
 // Updates LCD data
 void updateLCD() {
+  char LCDNewMessage[2][17];
+  char FloatStr[6];
+  int startPointLine0, startPointLine1;
+
   if( (time - lastTimeUpdatedLCD) > defaultUpdateLCDInterval ) {
 
     /* Dim display when not in use */
@@ -343,79 +370,113 @@ void updateLCD() {
      analogWrite(pin_lcd_brightness, Brightnss);
      LCDBacklightIsOn = true;
     }
-    lcd.clear();
     switch(currentMenuState) {
       case menuState_main:
-        lcd.setCursor(4, 0);
-        lcd.print(water_temperature, 2);
-        lcd.print((char)223);
-        lcd.print("C");
+        // lcd.setCursor(4, 0);
+        // lcd.print(water_temperature, 2);
+        // lcd.print((char)223);
+        // lcd.print("C");
+        dtostrf(water_temperature, 5, 2, FloatStr);
+        sprintf(LCDNewMessage[0], "%s%cC", FloatStr, 223);
+        startPointLine0 = 4;
         if(currentActionState == actionState_standby){
-          lcd.setCursor(2, 1);
-          lcd.print("Em descanso");
+          // lcd.setCursor(2, 1);
+          // lcd.print("Em descanso");
+          sprintf(LCDNewMessage[1], "Em descanso");
+          startPointLine1 = 2;
         }
         else if(currentActionState == actionState_filtration && forcedFiltering == false) {
-          lcd.setCursor(3, 1);
-          lcd.print("Filt. auto");
+          // lcd.setCursor(3, 1);
+          sprintf(LCDNewMessage[1], "Filt. auto");
+          startPointLine1 = 3;
         }
         else if(currentActionState == actionState_filtration && forcedFiltering == true) {
-          lcd.setCursor(1, 1);
-          lcd.print("Filt. forcada");
+          // lcd.setCursor(1, 1);
+          // lcd.print("Filt. forcada");
+          sprintf(LCDNewMessage[1], "Filt. forcada");
+          startPointLine1 = 1;
         }
         else if(currentActionState == actionState_heating) {
-          lcd.setCursor(3, 1);
-          lcd.print("Aquecendo");
+          // lcd.setCursor(3, 1);
+          // lcd.print("Aquecendo");
+          sprintf(LCDNewMessage[1], "Aquecendo");
+          startPointLine1 = 3;
         }
         break;
        case menuState_heating:
-        lcd.setCursor(2, 0);
-        lcd.print("Aquecer ate");
-        lcd.setCursor(5, 1);
-        lcd.print(heatingTemperature, 2);
-        lcd.print((char)223);
-        lcd.print("C");
+        // lcd.setCursor(2, 0);
+        // lcd.print("Aquecer ate");
+        sprintf(LCDNewMessage[0], "Aquecer ate");
+        startPointLine0 = 2;
+        // lcd.setCursor(5, 1);
+        // lcd.print(heatingTemperature, 2);
+        // lcd.print((char)223);
+        // lcd.print("C");
+        dtostrf(heatingTemperature, 5, 2, FloatStr);
+        sprintf(LCDNewMessage[1], "%s%cC", FloatStr, 223);
+        startPointLine1 = 5;
        break;
        case menuState_setFiltering:
-        lcd.setCursor(0, 0);
-        lcd.print("Forcar filtragem");
+        // lcd.setCursor(0, 0);
+        // lcd.print("Forcar filtragem");
+        sprintf(LCDNewMessage[0], "Forcar filtragem");
+        startPointLine0 = 0;
         if(forcedFiltering){
-          lcd.setCursor(5, 1);
-          lcd.print("Ligado");
+          // lcd.setCursor(5, 1);
+          // lcd.print("Ligado");
+          sprintf(LCDNewMessage[1], "Ligado");
+          startPointLine1 = 5;
         }
         else{
-          lcd.setCursor(3, 1);
-          lcd.print("Desligado");
+          // lcd.setCursor(3, 1);
+          // lcd.print("Desligado");
+          sprintf(LCDNewMessage[1], "Desligado");
+          startPointLine1 = 3;
         }
        break;
        case menuState_autoFiltering:
-        lcd.setCursor(0, 0);
-        lcd.print("Auto filtragem");
+        // lcd.setCursor(0, 0);
+        // lcd.print("Auto filtragem");
+        sprintf(LCDNewMessage[0], "Auto filtragem");
+        startPointLine0 = 0;
         if(filteringCycleDuration){
-          lcd.setCursor(1, 1);
-          lcd.print(filteringCycleDuration, 2);
-          lcd.print(" H/dia")
+          // lcd.setCursor(4, 1);
+          // lcd.print(filteringCycleDuration, 10);
+          // lcd.print(" H/dia");
+          sprintf(LCDNewMessage[1], "%d H/dia", filteringCycleDuration);
+          startPointLine1 = 4;
         }
         else{
-          lcd.setCursor(3, 1);
-          lcd.print("Desligado");
+          // lcd.setCursor(3, 1);
+          // lcd.print("Desligado");
+          sprintf(LCDNewMessage[1], "Desligado");
+          startPointLine1 = 3;
         }
        break;
        case menuState_setHeating:
-        lcd.setCursor(3, 0);
-        lcd.print("Aquecimento");
+        // lcd.setCursor(3, 0);
+        // lcd.print("Aquecimento");
+        sprintf(LCDNewMessage[0], "Aquecimento");
+        startPointLine1 = 3;
         if(setHeating){
-          lcd.setCursor(5, 1);
-          lcd.print("Ligado");
+          // lcd.setCursor(5, 1);
+          // lcd.print("Ligado");
+          sprintf(LCDNewMessage[1], "Ligado");
+          startPointLine1 = 5;
         }
         else{
-          lcd.setCursor(3, 1);
-          lcd.print("Desligado");
+          // lcd.setCursor(3, 1);
+          // lcd.print("Desligado");
+          sprintf(LCDNewMessage[1], "Desligado");
+          startPointLine1 = 3;
         }
        break;
     }
+  LCDShow(LCDNewMessage, startPointLine0, startPointLine1);
   lastTimeUpdatedLCD = time;
   }
 }
+
 
 // Switches motors to NA or to NF
 // If state = NF, all motors will go OFF.
@@ -464,6 +525,11 @@ void updateWaterTemperature() {
 
 // Check if its filtering time
 void checkAutoFiltering() {
+
+  long aux = time;
+  if(time < filteringCycleStartTime)
+    aux += millisInADay;
+
   if(filteringCycleStartTime < time && time < filteringCycleStopTime)
     autoFiltering = true;
   else
@@ -494,12 +560,12 @@ void changeFilteringCycleDuarion(int k) {
    filteringCycleDuration = 24;
 
  }
- else if(auxTemperature < 0) {
+ else if(auxDuration < 0) {
    filteringCycleDuration = 0;
  }
  else {
    filteringCycleDuration = auxDuration;
-   filteringCycleStartTime = time
+   filteringCycleStartTime = time;
    filteringCycleStopTime = filteringCycleStartTime + filteringCycleDuration*millisInAnHour;
  }
 }
