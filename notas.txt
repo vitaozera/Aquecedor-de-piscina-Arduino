@@ -1,10 +1,10 @@
-- Evitar flicker no LCD dando update só nas informacoes que mudaram.
 
-- Ver se o time e o millis() podem ser usados da forma como são usados. Tudo da certo quando o millis reseta para 0 ?? 
+- Ver se o time e o millis() podem ser usados da forma como são usados. Tudo da certo quando o millis reseta para 0 ??
 
+[FEITO]
 - Ver como usar a memoria persistente EEPROM pra gravar o estado do arduino pra manter os dados mesmo depois de reiniciar o arduino.
 Usar o ->>>>> https://github.com/thijse/Arduino-EEPROMEx
-Variaveis que sao armazenadas: 
+Variaveis que sao armazenadas:
 heatingTemperature
 setHeating
 forcedFiltering
@@ -15,10 +15,10 @@ Seguir o tutorial do:
 	http://ilovearduino.com/using-lcd-with-arduino/
 No tutorial ele não liga a luz de fundo controlada pelo pin 9.
 pra ligar a luz de fundo:
-	analogWrite(9, 64);  
-	
+	analogWrite(9, 64);
+
 BUGS:
 os cliques dos botoes nao sao detectados quando o sensor esta sendo lido por exemplo ou quando ta rodando alguma outra parte do codigo, ou em algum delay etc. Implementar threads.
-	
+
 LEMBRETES:
 - Ligar o ground do LCD diretamente à placa arduino. Por algum motivo misterioso do além se ligar no ground da  protoboard letras misteriosas também do além aparecem.

@@ -23,6 +23,7 @@ const int menuState_heating = 1;
 const int menuState_setHeating = 2;
 const int menuState_setFiltering = 3;
 const int menuState_autoFiltering = 4;
+const unsigned long defaultConfigurationSaveInterval = 20000;
 const unsigned long defaultCheckTemperatureInterval = 30000;
 const unsigned long defaultUpdateLCDInterval = 500;
 const unsigned long LCDDimTime = 15000;
@@ -30,6 +31,12 @@ const int buttonsAmount = 3;
 const int button_set = 0;
 const int button_down = 1;
 const int button_up = 2;
+// skip 4 bytes for each data
+const int memoryHeatingTemperature = 0;
+const int memorySetHeating = 4;
+const int memoryForcedFiltering = 8;
+const int memoryFilteringDuration = 12;
+const int memoryFilteringStart = 16;
 
 // PINS
 const int pin_relay0 = A3; // motor - velocity 0
@@ -85,8 +92,9 @@ boolean heating = false; // Heating System - ON or OFF - Calculated by program
 boolean setHeating = false; // Heating - On or OFF - User input
 float heatingTemperature = 20;
 boolean LCDBacklightIsOn = false;
+boolean configurationChanged = false;
 
-char LCDCurrentMessage[2][17];
+char LCDCurrentMessage[2][17]; // Vector of the strings being currently shown in the LCD
 
 void setup() {
   // Setup pins
@@ -112,6 +120,8 @@ void setup() {
     button[i].multiclickTime = 250;  // Time limit for multi clicks
     button[i].longClickTime  = 1000; // Time until long clicks register
   }
+
+  recoverData();
 
 }
 
@@ -142,6 +152,9 @@ void loop() {
 
   // Update LCD
   updateLCD();
+
+  // Check to see if there is any configuration to be saved
+  checkConfigurationChange();
 }
 
 // Checks whether heating should be turned on or off
@@ -220,15 +233,19 @@ void  doButtonClickAction() {
         break;
         case menuState_heating:
           changeHeatingTemperature(0.5);
+          configurationChanged = true;
         break;
         case menuState_autoFiltering:
           changeFilteringCycleDuarion(1);
+          configurationChanged = true;
         break;
         case menuState_setFiltering:
           forcedFiltering = !forcedFiltering;
+          configurationChanged = true;
         break;
         case menuState_setHeating:
           setHeating = !setHeating;
+          configurationChanged = true;
         break;
       }
     break;
@@ -335,20 +352,25 @@ void checkButtonClicks() {
   }
 }
 
+// Shows the two strings being stored in the vector, one in each line of the LCD;
+// startPointLine0 and startPointLine1 indicate on wich position
+// of the display each line should be displayed.
 void LCDShow(char newMessage[2][17], int startPointLine0, int startPointLine1){
   boolean changed = false;
   if(strcmp(LCDCurrentMessage[0], newMessage[0]) || strcmp(LCDCurrentMessage[1], newMessage[1]))
     changed = true;
 
   if(changed){
+    // Save the new strings being shown in the display
     strcpy(LCDCurrentMessage[0], newMessage[0]);
     strcpy(LCDCurrentMessage[1], newMessage[1]);
+
+    // Print both strings to the LCD
     lcd.clear();
     lcd.setCursor(startPointLine0,0);
     lcd.print(newMessage[0]);
     lcd.setCursor(startPointLine1,1);
     lcd.print(newMessage[1]);
-    delay(100);
   }
 
 }
@@ -365,6 +387,7 @@ void updateLCD() {
     if( (time - lastButtonPressTime) > LCDDimTime ) {
      analogWrite(pin_lcd_brightness, 0);
      LCDBacklightIsOn = false;
+     currentMenuState = menuState_main;
     }
     else {
      analogWrite(pin_lcd_brightness, Brightnss);
@@ -372,101 +395,65 @@ void updateLCD() {
     }
     switch(currentMenuState) {
       case menuState_main:
-        // lcd.setCursor(4, 0);
-        // lcd.print(water_temperature, 2);
-        // lcd.print((char)223);
-        // lcd.print("C");
         dtostrf(water_temperature, 5, 2, FloatStr);
         sprintf(LCDNewMessage[0], "%s%cC", FloatStr, 223);
         startPointLine0 = 4;
         if(currentActionState == actionState_standby){
-          // lcd.setCursor(2, 1);
-          // lcd.print("Em descanso");
           sprintf(LCDNewMessage[1], "Em descanso");
           startPointLine1 = 2;
         }
         else if(currentActionState == actionState_filtration && forcedFiltering == false) {
-          // lcd.setCursor(3, 1);
           sprintf(LCDNewMessage[1], "Filt. auto");
           startPointLine1 = 3;
         }
         else if(currentActionState == actionState_filtration && forcedFiltering == true) {
-          // lcd.setCursor(1, 1);
-          // lcd.print("Filt. forcada");
           sprintf(LCDNewMessage[1], "Filt. forcada");
           startPointLine1 = 1;
         }
         else if(currentActionState == actionState_heating) {
-          // lcd.setCursor(3, 1);
-          // lcd.print("Aquecendo");
           sprintf(LCDNewMessage[1], "Aquecendo");
           startPointLine1 = 3;
         }
         break;
        case menuState_heating:
-        // lcd.setCursor(2, 0);
-        // lcd.print("Aquecer ate");
         sprintf(LCDNewMessage[0], "Aquecer ate");
         startPointLine0 = 2;
-        // lcd.setCursor(5, 1);
-        // lcd.print(heatingTemperature, 2);
-        // lcd.print((char)223);
-        // lcd.print("C");
         dtostrf(heatingTemperature, 5, 2, FloatStr);
         sprintf(LCDNewMessage[1], "%s%cC", FloatStr, 223);
         startPointLine1 = 5;
        break;
        case menuState_setFiltering:
-        // lcd.setCursor(0, 0);
-        // lcd.print("Forcar filtragem");
         sprintf(LCDNewMessage[0], "Forcar filtragem");
         startPointLine0 = 0;
         if(forcedFiltering){
-          // lcd.setCursor(5, 1);
-          // lcd.print("Ligado");
           sprintf(LCDNewMessage[1], "Ligado");
           startPointLine1 = 5;
         }
         else{
-          // lcd.setCursor(3, 1);
-          // lcd.print("Desligado");
           sprintf(LCDNewMessage[1], "Desligado");
           startPointLine1 = 3;
         }
        break;
        case menuState_autoFiltering:
-        // lcd.setCursor(0, 0);
-        // lcd.print("Auto filtragem");
         sprintf(LCDNewMessage[0], "Auto filtragem");
         startPointLine0 = 0;
         if(filteringCycleDuration){
-          // lcd.setCursor(4, 1);
-          // lcd.print(filteringCycleDuration, 10);
-          // lcd.print(" H/dia");
           sprintf(LCDNewMessage[1], "%d H/dia", filteringCycleDuration);
           startPointLine1 = 4;
         }
         else{
-          // lcd.setCursor(3, 1);
-          // lcd.print("Desligado");
           sprintf(LCDNewMessage[1], "Desligado");
           startPointLine1 = 3;
         }
        break;
        case menuState_setHeating:
-        // lcd.setCursor(3, 0);
-        // lcd.print("Aquecimento");
         sprintf(LCDNewMessage[0], "Aquecimento");
-        startPointLine1 = 3;
+        startPointLine0 = 3;
         if(setHeating){
-          // lcd.setCursor(5, 1);
-          // lcd.print("Ligado");
           sprintf(LCDNewMessage[1], "Ligado");
           startPointLine1 = 5;
         }
         else{
-          // lcd.setCursor(3, 1);
-          // lcd.print("Desligado");
           sprintf(LCDNewMessage[1], "Desligado");
           startPointLine1 = 3;
         }
@@ -526,6 +513,9 @@ void updateWaterTemperature() {
 // Check if its filtering time
 void checkAutoFiltering() {
 
+  // For the case where the day have changed
+  // If there is a chance the day has changed since de StartTime,
+  // consider the filtering period started in the previous day
   long aux = time;
   if(time < filteringCycleStartTime)
     aux += millisInADay;
@@ -568,4 +558,40 @@ void changeFilteringCycleDuarion(int k) {
    filteringCycleStartTime = time;
    filteringCycleStopTime = filteringCycleStartTime + filteringCycleDuration*millisInAnHour;
  }
+}
+
+// Save some important variables to the persistent memory,
+// reducing data loss on shutdown
+void saveData(){
+    EEPROM.updateFloat(memoryHeatingTemperature, heatingTemperature);
+    EEPROM.updateBit(memorySetHeating, 0, setHeating);
+    EEPROM.updateBit(memoryForcedFiltering, 0, forcedFiltering);
+    EEPROM.updateInt(memoryFilteringDuration, filteringCycleDuration);
+    EEPROM.updateLong(memoryFilteringStart, filteringCycleStartTime);
+}
+
+// Recover from Arduino's persistent memory some important data that
+// should not be lost in case of a shutdown
+void recoverData(){
+    // Recover data from memory
+    heatingTemperature = EEPROM.readFloat(memoryHeatingTemperature);
+    setHeating = EEPROM.readBit(memorySetHeating, 0);
+    forcedFiltering = EEPROM.readBit(memoryForcedFiltering, 0);
+    filteringCycleDuration = EEPROM.readInt(memoryFilteringDuration);
+    filteringCycleStartTime = EEPROM.readLong(memoryFilteringStart);
+
+    // Rebuild some data based on what eas read from memory
+    filteringCycleStopTime = filteringCycleStartTime + filteringCycleDuration*millisInAnHour;
+}
+
+// Check if any there was any change in any configuration;
+// If there was, and the system does not receive any input in a certain time,
+// it saves the new configuartions to the persistent memory.
+void checkConfigurationChange(){
+    if(!configurationChanged)
+        return;
+    if(time - lastButtonPressTime > defaultConfigurationSaveInterval){
+        saveData();
+        configurationChanged = false;
+    }
 }
