@@ -381,10 +381,10 @@ void updateLCD() {
   char FloatStr[6];
   int startPointLine0, startPointLine1;
 
-  if( (time - lastTimeUpdatedLCD) > defaultUpdateLCDInterval ) {
+  if( (time - lastTimeUpdatedLCD) > defaultUpdateLCDInterval || (time - lastTimeUpdatedLCD) < 0) {
 
     /* Dim display when not in use */
-    if( (time - lastButtonPressTime) > LCDDimTime ) {
+    if( (time - lastButtonPressTime) > LCDDimTime  || (time - lastButtonPressTime) < 0) {
      analogWrite(pin_lcd_brightness, 0);
      LCDBacklightIsOn = false;
      currentMenuState = menuState_main;
@@ -506,7 +506,7 @@ void updateWaterTemperature() {
   if( time > nextTimeCheckTemperature )  {
     sensors.requestTemperatures();
     water_temperature = sensors.getTempC(sensor1);
-    nextTimeCheckTemperature = time + defaultCheckTemperatureInterval;
+    nextTimeCheckTemperature = (time + defaultCheckTemperatureInterval) % millisInADay;
   }
 }
 
@@ -590,7 +590,7 @@ void recoverData(){
 void checkConfigurationChange(){
     if(!configurationChanged)
         return;
-    if(time - lastButtonPressTime > defaultConfigurationSaveInterval){
+    if(time - lastButtonPressTime > defaultConfigurationSaveInterval || (time - lastButtonPressTime) < 0){
         saveData();
         configurationChanged = false;
     }

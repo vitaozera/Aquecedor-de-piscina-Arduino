@@ -1,4 +1,4 @@
-
+[Feito]
 - Ver se o time e o millis() podem ser usados da forma como são usados. Tudo da certo quando o millis reseta para 0 ??
 
 [FEITO]
