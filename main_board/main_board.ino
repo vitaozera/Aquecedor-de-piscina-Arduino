@@ -256,15 +256,19 @@ void  doButtonClickAction() {
         break;
         case menuState_heating:
           changeHeatingTemperature(-0.5);
+          configurationChanged = true;
         break;
         case menuState_autoFiltering:
           changeFilteringCycleDuarion(-1);
+          configurationChanged = true;
         break;
         case menuState_setFiltering:
           forcedFiltering = !forcedFiltering;
+          configurationChanged = true;
         break;
         case menuState_setHeating:
           setHeating = !setHeating;
+          configurationChanged = true;
         break;
       }
     break;
@@ -520,7 +524,7 @@ void checkAutoFiltering() {
   if(time < filteringCycleStartTime)
     aux += millisInADay;
 
-  if(filteringCycleStartTime < time && time < filteringCycleStopTime)
+  if(filteringCycleStartTime < aux && aux < filteringCycleStopTime)
     autoFiltering = true;
   else
     autoFiltering = false;
