@@ -501,14 +501,14 @@ void updateWaterTemperature() {
 
 // Check if its filtering time
 void checkAutoFiltering() {
-  if(filteringCycleStartTime < filteringCycleStopTime) {
+  if(filteringCycleStartTime <= filteringCycleStopTime) {
     if(time > filteringCycleStartTime && time < filteringCycleStopTime)
       autoFiltering = true;
     else
       autoFiltering = false;
   }
   else {
-    if(time > filteringCycleStopTime && time < filteringCycleStartTime)
+    if(time > filteringCycleStartTime || time < filteringCycleStopTime)
       autoFiltering = true;
     else
       autoFiltering = false;
@@ -570,7 +570,7 @@ void recoverData(){
     filteringCycleStartTime = EEPROM.readLong(memoryFilteringStart);
 
     // Rebuild some data based on what eas read from memory
-    filteringCycleStopTime = filteringCycleStartTime + filteringCycleDuration*millisInAnHour;
+    filteringCycleStopTime = (filteringCycleStartTime + filteringCycleDuration*millisInAnHour) % millisInADay;
 }
 
 // Check if any there was any change in any configuration;
@@ -584,3 +584,4 @@ void checkConfigurationChange(){
         configurationChanged = false;
     }
 }
+
