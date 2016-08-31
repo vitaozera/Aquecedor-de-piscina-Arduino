@@ -181,21 +181,6 @@ void checkHeating() {
       heating = false;
     }
   }
-  /*
-  if(setHeating && (water_temperature < heatingTemperature + 0.5)) {
-    if(heating && (water_temperature > heatingTemperature - 0.5)) {
-      heating = true;
-    }
-    else {
-      heating = false;
-
-  }
-  else if(setHeating && (water_temperature < heatingTemperature) {
-
-  }
-  else {
-    heating = false;
-  } */
 }
 
 // Does button click action
@@ -383,12 +368,12 @@ void LCDShow(char newMessage[2][17], int startPointLine0, int startPointLine1){
 void updateLCD() {
   char LCDNewMessage[2][17];
   char FloatStr[6];
-  int startPointLine0, startPointLine1;
+  int startPointLine0=0, startPointLine1=0;
 
-  if( (time - lastTimeUpdatedLCD) > defaultUpdateLCDInterval || (time - lastTimeUpdatedLCD) < 0) {
+  if( (time - lastTimeUpdatedLCD) > defaultUpdateLCDInterval || long(time - lastTimeUpdatedLCD) < 0) {
 
     /* Dim display when not in use */
-    if( (time - lastButtonPressTime) > LCDDimTime  || (time - lastButtonPressTime) < 0) {
+    if( (time - lastButtonPressTime) > LCDDimTime  || long(time - lastButtonPressTime) < 0) {
      analogWrite(pin_lcd_brightness, 0);
      LCDBacklightIsOn = false;
      currentMenuState = menuState_main;
@@ -528,15 +513,6 @@ void checkAutoFiltering() {
     else
       autoFiltering = false;
   }
-
-  /*long aux = time;
-  if(time < filteringCycleStartTime)
-    aux += millisInADay;
-
-  if(filteringCycleStartTime < aux && aux < filteringCycleStopTime)
-    autoFiltering = true;
-  else
-    autoFiltering = false; */
 }
 
 // Change heating temperature
@@ -603,9 +579,8 @@ void recoverData(){
 void checkConfigurationChange(){
     if(!configurationChanged)
         return;
-    if(time - lastButtonPressTime > defaultConfigurationSaveInterval || (time - lastButtonPressTime) < 0){
+    if(time - lastButtonPressTime >= defaultConfigurationSaveInterval || long(time - lastButtonPressTime) < 0){
         saveData();
         configurationChanged = false;
     }
 }
-
