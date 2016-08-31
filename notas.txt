@@ -18,6 +18,7 @@ pra ligar a luz de fundo:
 	analogWrite(9, 64);
 
 BUGS:
+
 os cliques dos botoes nao sao detectados quando o sensor esta sendo lido por exemplo ou quando ta rodando alguma outra parte do codigo, ou em algum delay etc. Implementar threads.
 
 LEMBRETES:

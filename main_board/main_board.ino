@@ -23,9 +23,9 @@ const int menuState_heating = 1;
 const int menuState_setHeating = 2;
 const int menuState_setFiltering = 3;
 const int menuState_autoFiltering = 4;
-const unsigned long defaultConfigurationSaveInterval = 20000;
+const unsigned long defaultConfigurationSaveInterval = 2000;
 const unsigned long defaultCheckTemperatureInterval = 30000;
-const unsigned long defaultUpdateLCDInterval = 500;
+const unsigned long defaultUpdateLCDInterval = 100;
 const unsigned long LCDDimTime = 15000;
 const int buttonsAmount = 3;
 const int button_set = 0;
@@ -256,15 +256,19 @@ void  doButtonClickAction() {
         break;
         case menuState_heating:
           changeHeatingTemperature(-0.5);
+          configurationChanged = true;
         break;
         case menuState_autoFiltering:
           changeFilteringCycleDuarion(-1);
+          configurationChanged = true;
         break;
         case menuState_setFiltering:
           forcedFiltering = !forcedFiltering;
+          configurationChanged = true;
         break;
         case menuState_setHeating:
           setHeating = !setHeating;
+          configurationChanged = true;
         break;
       }
     break;
