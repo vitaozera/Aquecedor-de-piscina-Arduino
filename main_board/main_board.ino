@@ -524,7 +524,7 @@ void checkAutoFiltering() {
   if(time < filteringCycleStartTime)
     aux += millisInADay;
 
-  if(filteringCycleStartTime < time && time < filteringCycleStopTime)
+  if(filteringCycleStartTime < aux && aux < filteringCycleStopTime)
     autoFiltering = true;
   else
     autoFiltering = false;
