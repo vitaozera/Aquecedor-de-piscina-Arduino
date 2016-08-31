@@ -516,18 +516,27 @@ void updateWaterTemperature() {
 
 // Check if its filtering time
 void checkAutoFiltering() {
+  if(filteringCycleStartTime < filteringCycleStopTime) {
+    if(time > filteringCycleStartTime && time < filteringCycleStopTime)
+      autoFiltering = true;
+    else
+      autoFiltering = false;
+  }
+  else {
+    if(time > filteringCycleStopTime && time < filteringCycleStartTime)
+      autoFiltering = true;
+    else
+      autoFiltering = false;
+  }
 
-  // For the case where the day have changed
-  // If there is a chance the day has changed since de StartTime,
-  // consider the filtering period started in the previous day
-  long aux = time;
+  /*long aux = time;
   if(time < filteringCycleStartTime)
     aux += millisInADay;
 
   if(filteringCycleStartTime < aux && aux < filteringCycleStopTime)
     autoFiltering = true;
   else
-    autoFiltering = false;
+    autoFiltering = false; */
 }
 
 // Change heating temperature
@@ -599,3 +608,4 @@ void checkConfigurationChange(){
         configurationChanged = false;
     }
 }
+
