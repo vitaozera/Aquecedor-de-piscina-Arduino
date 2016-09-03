@@ -461,21 +461,21 @@ void switchMotor(int velocity, bool state) {
   switch(velocity) {
     case 0:
       // Sets all other relays to NF
-      digitalWrite(pin_relay1, NF);
-      digitalWrite(pin_relay2, NF);
-      digitalWrite(pin_relay0, state);
+      digitalWrite(pin_relay1, !NF);
+      digitalWrite(pin_relay2, !NF);
+      digitalWrite(pin_relay0, !state);
       break;
     case 1:
       // Sets all other relays to NF
-      digitalWrite(pin_relay0, NF);
-      digitalWrite(pin_relay2, NF);
-      digitalWrite(pin_relay1, state);
+      digitalWrite(pin_relay0, !NF);
+      digitalWrite(pin_relay2, !NF);
+      digitalWrite(pin_relay1, !state);
       break;
     case 2:
       // Sets all other relays to NF
-      digitalWrite(pin_relay0, NF);
-      digitalWrite(pin_relay1, NF);
-      digitalWrite(pin_relay2, state);
+      digitalWrite(pin_relay0, !NF);
+      digitalWrite(pin_relay1, !NF);
+      digitalWrite(pin_relay2, !state);
       break;
   }
 }
@@ -487,7 +487,7 @@ void switchCompressor(bool state) {
 
 // Switches water bomb to NA or to NF
 void switchWaterBomb(bool state) {
-    digitalWrite(pin_relay4, state);
+    digitalWrite(pin_relay4, !state);
 }
 
 // Updates water temperature reading from sensor
@@ -584,4 +584,3 @@ void checkConfigurationChange(){
         configurationChanged = false;
     }
 }
-
