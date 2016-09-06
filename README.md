@@ -9,8 +9,6 @@ PDF especificações: http://www.heliotek.com.br/Downloads/Manuais/manual_aquece
 
   Podemos reaproveitar os Pressure Switch!!! Eles operam por si só. Só precisamos criar um circuito capaz de cortar a energia do sistema todo caso algum deles desligue (Acho que é só conectar em série com o compressor e motor).
 
-  Falta apenas cuidar dos sensores de temperatura.
-
 
 ### Novos --
 Kit Jumpers: http://www.filipeflop.com/pd-6b637-kit-jumpers-macho-macho-x65-unidades.html
