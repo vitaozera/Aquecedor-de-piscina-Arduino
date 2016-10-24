@@ -3,6 +3,7 @@ Placa caseira pra substituir a placa original que só queima do trocador de calo
 
 PDF especificações: http://www.heliotek.com.br/Downloads/Manuais/manual_aquecedores_piscina_ok.pdf
 
+Sobre inrush current: http://www.ti.com/lit/an/slva670a/slva670a.pdf
 ---
 
 ## Componentes
