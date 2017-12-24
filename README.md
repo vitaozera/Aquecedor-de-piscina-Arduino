@@ -3,13 +3,12 @@ Placa caseira pra substituir a placa original que só queima do trocador de calo
 
 PDF especificações: http://www.heliotek.com.br/Downloads/Manuais/manual_aquecedores_piscina_ok.pdf
 
+Sobre inrush current: http://www.ti.com/lit/an/slva670a/slva670a.pdf
 ---
 
 ## Componentes
 
   Podemos reaproveitar os Pressure Switch!!! Eles operam por si só. Só precisamos criar um circuito capaz de cortar a energia do sistema todo caso algum deles desligue (Acho que é só conectar em série com o compressor e motor).
-
-  Falta apenas cuidar dos sensores de temperatura.
 
 
 ### Novos --

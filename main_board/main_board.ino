@@ -115,6 +115,10 @@ void setup() {
   pinMode(pin_relay4, OUTPUT);
   pinMode(pin_lcd_brightness, OUTPUT);
 
+  // Needed to avoid relays turning on and off on startup
+  currentActionState = actionState_standby;
+  doCurrentActionState();
+
   pinMode(pin_pressure_switchs, INPUT);
 
   // Setup LCD
