@@ -1,3 +1,5 @@
+#include <SPI.h>
+
 #include <EEPROMVar.h>
 #include <EEPROMex.h>
 #include <Arduino.h>
@@ -18,6 +20,8 @@ const int Brightnss = 48;
 const int actionState_standby = 0;
 const int actionState_filtration= 1;
 const int actionState_heating = 2;
+const int actionState_preHeating = 3;
+const int actionState_heatingError = 4;
 const int menuState_main = 0;
 const int menuState_heating = 1;
 const int menuState_setHeating = 2;
@@ -27,6 +31,7 @@ const unsigned long defaultConfigurationSaveInterval = 2000;
 const unsigned long defaultCheckTemperatureInterval = 30000;
 const unsigned long defaultUpdateLCDInterval = 100;
 const unsigned long LCDDimTime = 15000;
+const unsigned long defaultPreHeatingDuration = 5000;
 const int buttonsAmount = 3;
 const int button_set = 0;
 const int button_down = 1;
@@ -56,6 +61,7 @@ const int pin_button_set = A0; // Set button
 const int pin_button_down = A1; // Down button
 const int pin_button_up = A2; // Up button
 const int pin_termometer = 10; // Temperature Sensor
+const int pin_pressure_switchs = 13; // Water and gas Pressure Switchs
 
 // LCD
 LiquidCrystal lcd(pin_lcd_RS, pin_lcd_enable, pin_lcd_data3,
@@ -82,6 +88,7 @@ int currentActionState = actionState_standby;
 int currentMenuState = menuState_main;
 unsigned long filteringCycleStartTime = 0;
 unsigned long filteringCycleStopTime = 21600000; // 6 hours
+unsigned long preHeatingStartedTime = 0;
 int filteringCycleDuration = 6; // Filtering cycle duration in hours
 int lastButtonPressed = -1;
 boolean buttonPressed = false;
@@ -89,10 +96,13 @@ unsigned long lastButtonPressTime = 0;
 boolean forcedFiltering = false; // Forced filtering - ON or OFF - User input
 boolean autoFiltering = false; // Auto filtering - ON or OFF - Calculated by program
 boolean heating = false; // Heating System - ON or OFF - Calculated by program
+boolean preHeating = false; // Heating System [Bomb only (until with pressure)] - ON or OFF - Calculated by program
 boolean setHeating = false; // Heating - On or OFF - User input
+boolean heatingError = true; // Problem detected with the heating System
 float heatingTemperature = 20;
 boolean LCDBacklightIsOn = false;
 boolean configurationChanged = false;
+boolean pressureSwitchsActivated = false;
 
 char LCDCurrentMessage[2][17]; // Vector of the strings being currently shown in the LCD
 
@@ -104,6 +114,8 @@ void setup() {
   pinMode(pin_relay3, OUTPUT);
   pinMode(pin_relay4, OUTPUT);
   pinMode(pin_lcd_brightness, OUTPUT);
+
+  pinMode(pin_pressure_switchs, INPUT);
 
   // Setup LCD
   lcd.begin(16, 2);
@@ -121,6 +133,7 @@ void setup() {
     button[i].longClickTime  = 1000; // Time until long clicks register
   }
 
+  // Recover saved configuration data
   recoverData();
 
 }
@@ -132,11 +145,17 @@ void loop() {
   // Update water temperature
   updateWaterTemperature();
 
+  // Check if the Pressure Switchs are all active or not
+  checkPressureSwitchs();
+
   // Check whether auto filtering should be turned on or off
   checkAutoFiltering();
 
   // Check whether heating should be turned on or off
   checkHeating();
+
+  // Check whether thre pre-heating should be turned on or off
+  checkPreHeating();
 
   // Check Button Clicks
   checkButtonClicks();
@@ -181,6 +200,39 @@ void checkHeating() {
       heating = false;
     }
   }
+}
+
+// Check wheter or not the Pre Heating system should be on or not
+// Only checks if the heating shoul be on
+// The Check is based only in the Pressure Switchs for now
+void checkPreHeating() {
+
+  bool initial_state = preHeating;
+
+  // Consider that no error is happening
+  heatingError = false;
+  preHeating = false;
+
+  // If the hating is not on, stop the check
+  if (!heating)
+    return;
+
+  // Check the state of the Pressure Switch System
+  if (pressureSwitchsActivated){
+    preHeating = false;
+  }
+  else{
+    // If the pressure switch is off, and the pre Heating limit is reached, heating Error
+    if( long(preHeatingStartedTime + defaultPreHeatingDuration)%millisInADay > time && initial_state){
+      heatingError = true;
+      preHeating = false;
+    }
+    else {
+      preHeating = true;
+    }
+  }
+  if(preHeating && initial_state==false)
+    preHeatingStartedTime = time;
 }
 
 // Does button click action
@@ -274,6 +326,13 @@ void actionStateSelector() {
   // Check if heating is on
   if(heating)
     currentActionState = actionState_heating;
+
+  // Check if the pre Heating shoul be on
+  if(preHeating)
+    currentActionState = actionState_preHeating;
+
+  if(heatingError)
+    currentActionState = actionState_heatingError;
 }
 
 // Do current action state action
@@ -302,6 +361,22 @@ void doCurrentActionState() {
       switchMotor(0, NA);
       // Turn on compressor
       switchCompressor(NA);
+      break;
+    case actionState_preHeating:
+      // Turn on Water Bomb
+      switchWaterBomb(NA);
+      // Turn on motor
+      switchMotor(0, NF);
+      // Turn on compressor
+      switchCompressor(NF);
+      break;
+    case actionState_heatingError:
+      // Turn off motor
+      switchMotor(0, NF);
+      // Turn off compressor
+      switchCompressor(NF);
+      // Turn of Water Bomb
+      switchWaterBomb(NF);
       break;
   }
 }
@@ -403,6 +478,14 @@ void updateLCD() {
           sprintf(LCDNewMessage[1], "Aquecendo");
           startPointLine1 = 3;
         }
+        else if(currentActionState == actionState_preHeating) {
+          sprintf(LCDNewMessage[1], "Inicio Aquec.");
+          startPointLine1 = 1;
+        }
+        else if(currentActionState == actionState_preHeating) {
+          sprintf(LCDNewMessage[1], "ERRO AQUEC.");
+          startPointLine1 = 3;
+        }
         break;
        case menuState_heating:
         sprintf(LCDNewMessage[0], "Aquecer ate");
@@ -482,7 +565,7 @@ void switchMotor(int velocity, bool state) {
 
 // Switches compressor to NA or to NF
 void switchCompressor(bool state) {
-    digitalWrite(pin_relay3, state);
+    digitalWrite(pin_relay2, state);
 }
 
 // Switches water bomb to NA or to NF
@@ -583,4 +666,13 @@ void checkConfigurationChange(){
         saveData();
         configurationChanged = false;
     }
+}
+
+// Check if the Pressure Switchs are all active or not
+// If they are active the heating can happen,
+// else it must be stopped
+void checkPressureSwitchs(){
+    // Disabled for tests
+    //pressureSwitchsActivated = digitalRead(pin_pressure_switchs);
+    pressureSwitchsActivated = 1;
 }
