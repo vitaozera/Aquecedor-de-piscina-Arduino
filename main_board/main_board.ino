@@ -1,3 +1,4 @@
+
 #include <SPI.h>
 
 #include <EEPROMVar.h>
@@ -211,7 +212,7 @@ void checkHeating() {
 // The Check is based only in the Pressure Switchs for now
 void checkPreHeating() {
 
-  bool initial_state = preHeating;
+  bool last_preHeating_state = preHeating;
 
   // Consider that no error is happening
   heatingError = false;
@@ -227,7 +228,7 @@ void checkPreHeating() {
   }
   else{
     // If the pressure switch is off, and the pre Heating limit is reached, heating Error
-    if( long(preHeatingStartedTime + defaultPreHeatingDuration)%millisInADay > time && initial_state){
+    if( long(preHeatingStartedTime + defaultPreHeatingDuration)%millisInADay > time && last_preHeating_state){
       heatingError = true;
       preHeating = false;
     }
@@ -235,7 +236,7 @@ void checkPreHeating() {
       preHeating = true;
     }
   }
-  if(preHeating && initial_state==false)
+  if(preHeating && last_preHeating_state==false)
     preHeatingStartedTime = time;
 }
 
@@ -569,7 +570,7 @@ void switchMotor(int velocity, bool state) {
 
 // Switches compressor to NA or to NF
 void switchCompressor(bool state) {
-    digitalWrite(pin_relay2, state);
+    digitalWrite(pin_relay2, !state);
 }
 
 // Switches water bomb to NA or to NF
