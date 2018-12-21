@@ -1,0 +1,19 @@
+fazer o programa setar uma variavel de preHeating (e nao setHeating como atualmente) quando o usuario mandar iniciar aquecimento e tratar as mudancas de acordo.
+
+linha
+489 - typo
+
+226 - deve tratar o reinicio do relogio igual a linha 670
+
+
+preso pra sempre no error quando heatingError = true
+heating continua true quando heatingError é setado
+
+Logicamente confuso o programa setar o heating pra depois trabalhar no preHeating.
+Isso acontece porque originalmente o programa, quando o usuario liga o aquecimento, seta o codigo pra heating. O julio reescreveu o codigo em cima disso, mas o certo seria quando o usuario clica em aquecer o programa o codigo nao setar heating e sim uma variavel pra indicar preHeating. E, so depois de o preHeating terminar, o heating é ativado e o preHeating desativado.
+
+
+674 - colocar TODO em checkPressureSwitchs
+
+Ver se tem problema quando o usuario clica repetidamente pra ativar/desativar o aquecimento
+
